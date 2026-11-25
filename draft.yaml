@@ -1,0 +1,56 @@
+# ShelfLife - base de datos (Blueprint)
+# Proyecto: app móvil para catalogar videojuegos, cómics y libros escaneando el
+# código de barras + panel web de administración. Modelos basados en el
+# prototipo de Figma y en el diagrama de clases.
+#
+# Uso:  php artisan blueprint:build
+#
+# - User ya existe (Breeze + Sanctum): no se define aquí. Su campo "blocked"
+#   y su relación items() ya están añadidos a mano en el proyecto.
+# - El orden importa: cada modelo va después de los modelos a los que apunta.
+# - "id:modelo" crea la clave foránea (xxx_id) y el belongsTo; el hasMany se
+#   indica en "relationships".
+
+models:
+  # Videojuegos, Libros, Cómics (selector de la pantalla "Mi Estantería")
+  Category:
+    name: string:50 unique
+    relationships:
+      hasMany: Product
+
+  # Ficha del catálogo central (la que edita el administrador).
+  # Se rellena al escanear el código de barras con IGDB / Google Books / OpenLibrary.
+  Product:
+    barcode: string:20 unique
+    title: string
+    platform: string nullable
+    author_publisher: string nullable
+    release_year: year nullable
+    cover_url: string nullable
+    source: string:30 nullable
+    status: enum:published,pending,review default:pending
+    category_id: id:category
+    relationships:
+      hasMany: Item
+
+  # Ítem de la estantería de un usuario (pantallas "Ficha" y "Detalle")
+  Item:
+    purchase_price: decimal:8,2 nullable
+    estimated_value: decimal:8,2 nullable
+    acquired_at: date nullable
+    state: enum:new,used
+    format: enum:physical,digital default:physical
+    location: string:50 nullable
+    notes: text nullable
+    user_id: id:user
+    product_id: id:product
+    relationships:
+      hasMany: Loan
+
+  # Pantalla "Préstamos": activo si returned_at es null; vencido si due_at ya pasó
+  Loan:
+    borrower_name: string:100
+    loaned_at: date
+    due_at: date nullable
+    returned_at: date nullable
+    item_id: id:item
